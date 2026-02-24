@@ -1,46 +1,48 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
-void main() {
-  runApp(const MyApp());
+import 'core/routing/app_router.dart';
+import 'core/theme/app_theme.dart';
+import 'features/decision/data/datasources/decision_local_datasource.dart';
+import 'features/decision/data/models/decision_model.dart';
+import 'features/decision/data/models/decision_result_model.dart';
+import 'features/decision/presentation/providers/decision_providers.dart';
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Hive.initFlutter();
+
+  Hive.registerAdapter(DecisionModelAdapter());
+  Hive.registerAdapter(DecisionResultModelAdapter());
+  Hive.registerAdapter(DecisionCategoryAdapter());
+  Hive.registerAdapter(PurchaseTypeAdapter());
+  Hive.registerAdapter(PaymentTypeAdapter());
+  Hive.registerAdapter(DecisionStatusAdapter());
+
+  final localDatasource = await DecisionLocalDataSource.create();
+
+  runApp(
+    ProviderScope(
+      overrides: [
+        decisionLocalDataSourceProvider.overrideWithValue(localDatasource),
+      ],
+      child: const SmartFinancialAdvisorApp(),
+    ),
+  );
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class SmartFinancialAdvisorApp extends StatelessWidget {
+  const SmartFinancialAdvisorApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        colorScheme: .fromSeed(seedColor: Colors.deepPurple),
-      ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
-    );
-  }
-}
-
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-  final String title;
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-
-  @override
-  Widget build(BuildContext context) {
-  
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(widget.title),
-      ),
-      body: Center(
-        child: Text('Hello Jodi')
-      ),
+      debugShowCheckedModeBanner: false,
+      title: 'Smart Financial Decision Advisor',
+      theme: AppTheme.light(),
+      onGenerateRoute: AppRouter.onGenerateRoute,
+      initialRoute: '/',
     );
   }
 }
